@@ -2,11 +2,14 @@
 // null = empty case, "X" or "O" = case ocupied
 let board = [null, null, null, null, null, null, null, null, null];
 // Who play now - begins always with X
-let curentPlayer = "X";
+let currentPlayer = "X";
 // The game is active as long as it is not over (win/draw)
 let gameActive  = true;
 // We take all the HTML boxes to add functionality to them
-const cells = document.querrySelectorAll(".cell");
+const cells = document.querySelectorAll(".cell");
+const statusText = document.getElementById("status");
+
+
 
 function handleCellClick(event) {
     const cell = event.target;
@@ -14,14 +17,20 @@ function handleCellClick(event) {
 
     // We don't do anything if the game is over or the house is busy
     if (!gameActive || board[index] !== null) {
+        return;
+    }
         
         // We save the move to the status array
-        board[index] = curentPlayer;
+        board[index] = currentPlayer;
 
         // We display the symbol in the box and add the class for color
-        cell.textContent = curentPlayer;
-        cell.classList.add(curentPlayer.toLowerCase());
-    }
+        cell.textContent = currentPlayer;
+        cell.classList.add(currentPlayer.toLowerCase());
+
+        // Switch the current player: if it was "X", make it "O", and vice versa
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        // Update the status message to show whose turn it is now
+        statusText.textContent = `Rândul lui ${currentPlayer}`;
 }
 // We attach the above function to each box
-cell.forEach(cell => cell.addEventListener("click", handleCellClick));
+cells.forEach(cell => cell.addEventListener("click", handleCellClick));
