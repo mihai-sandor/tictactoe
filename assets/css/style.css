@@ -1,17 +1,71 @@
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #f5f7ff, #e8f0ff);
+    color: #1f2937;
+}
+
+h1 {
+    margin: 0 0 8px;
+    font-size: 2.5rem;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 999px;
+    background: #2563eb;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+}
+
+p {
+    min-height: 1.5rem;
+    margin: 4px 0 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4b5563;
+    text-align: center;
+}
+
 /* Game table - grid 3 columns and 3 rows */
 #board {
     display: grid;
-    grid-template-columns: repeat(3,100px);
-    grid-template-rows: repeat(3,100px);
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
     gap: 5px;
-    margin: 20px auto;
+    margin: 16px auto 0;
 }
+
 /* Every cell in table */
 .cell {
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2.5rem;
-    border: 2px solid #333;
+    border: 2px solid #334155;
+    border-radius: 10px;
+    background: white;
     cursor: pointer; /* we show that is click-able */
 }
