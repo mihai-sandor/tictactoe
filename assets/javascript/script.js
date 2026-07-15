@@ -13,6 +13,7 @@ const cells = document.querySelectorAll(".cell");
 const statusText = document.getElementById("status");
 const twoPlayersButton = document.getElementById("btn-2players");
 const vsComputerButton = document.getElementById("btn-vs-computer");
+const vsComputerImpossibleButton = document.getElementById("btn-vs-computer-impossible");
 const restartButton = document.getElementById("btn-restart");
 
 // All possible winning combinations (rows, columns, diagonals)
@@ -45,7 +46,7 @@ function checkDraw() {
 }
 
 function getStatusMessage() {
-    if (gameMode === "vsComputer") {
+    if (gameMode === "vsComputer" || gameMode === "vsComputerImpossible") {
         return currentPlayer === "X" ? "Rândul tău" : "Rândul calculatorului";
     }
 
@@ -55,6 +56,7 @@ function getStatusMessage() {
 function updateModeButtons() {
     twoPlayersButton.classList.toggle("active", gameMode === "twoPlayers");
     vsComputerButton.classList.toggle("active", gameMode === "vsComputer");
+    vsComputerImpossibleButton.classList.toggle("active", gameMode === "vsComputerImpossible");
 }
 
 function getRandomEmptyCellIndex() {
@@ -68,6 +70,81 @@ function getRandomEmptyCellIndex() {
 
     const randomPosition = Math.floor(Math.random() * emptyIndexes.length);
     return emptyIndexes[randomPosition];
+}
+
+function getWinnerForMinimax(newBoard) {
+    for (const combo of winningCombos) {
+        const [a, b, c] = combo;
+        if (newBoard[a] !== null && newBoard[a] === newBoard[b] && newBoard[a] === newBoard[c]) {
+            return newBoard[a];
+        }
+    }
+
+    return null;
+}
+
+function minimax(newBoard, depth, isMaximizing) {
+    const winner = getWinnerForMinimax(newBoard);
+
+    if (winner === "O") {
+        return 10 - depth;
+    }
+
+    if (winner === "X") {
+        return depth - 10;
+    }
+
+    if (!newBoard.includes(null)) {
+        return 0;
+    }
+
+    if (isMaximizing) {
+        let bestScore = -Infinity;
+
+        for (let i = 0; i < 9; i++) {
+            if (newBoard[i] === null) {
+                newBoard[i] = "O";
+                const score = minimax(newBoard, depth + 1, false);
+                newBoard[i] = null;
+                bestScore = Math.max(bestScore, score);
+            }
+        }
+
+        return bestScore;
+    }
+
+    let bestScore = Infinity;
+
+    for (let i = 0; i < 9; i++) {
+        if (newBoard[i] === null) {
+            newBoard[i] = "X";
+            const score = minimax(newBoard, depth + 1, true);
+            newBoard[i] = null;
+            bestScore = Math.min(bestScore, score);
+        }
+    }
+
+    return bestScore;
+}
+
+function computerBestMove() {
+    let bestScore = -Infinity;
+    let bestMove = null;
+
+    for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+            board[i] = "O";
+            const score = minimax(board, 0, false);
+            board[i] = null;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = i;
+            }
+        }
+    }
+
+    return bestMove;
 }
 
 function playMove(cell, index) {
@@ -94,7 +171,7 @@ function playMove(cell, index) {
     statusText.textContent = getStatusMessage();
 }
 
-function computerMove() {
+function computerMoveRandom() {
     computerMoveTimeout = null;
 
     if (!gameActive || gameMode !== "vsComputer" || currentPlayer !== "O") {
@@ -111,12 +188,29 @@ function computerMove() {
     playMove(cell, index);
 }
 
-function scheduleComputerMove() {
+function computerMoveImpossible() {
+    computerMoveTimeout = null;
+
+    if (!gameActive || gameMode !== "vsComputerImpossible" || currentPlayer !== "O") {
+        return;
+    }
+
+    const index = computerBestMove();
+
+    if (index === null) {
+        return;
+    }
+
+    const cell = cells[index];
+    playMove(cell, index);
+}
+
+function scheduleComputerMove(moveFunction) {
     if (computerMoveTimeout !== null) {
         clearTimeout(computerMoveTimeout);
     }
 
-    computerMoveTimeout = setTimeout(computerMove, 500);
+    computerMoveTimeout = setTimeout(moveFunction, 500);
 }
 
 function resetGame() {
@@ -153,19 +247,26 @@ function handleCellClick(event) {
     const index = cell.dataset.index; // we read data-index fron HTML
 
     // Don't do anything if the game is over, the cell is occupied, or it is the computer's turn
-    if (!gameActive || board[index] !== null || (gameMode === "vsComputer" && currentPlayer !== "X")) {
+    if (!gameActive || board[index] !== null || (gameMode !== "twoPlayers" && currentPlayer !== "X")) {
         return;
     }
 
     playMove(cell, index);
 
-    if (gameActive && gameMode === "vsComputer" && currentPlayer === "O") {
-        scheduleComputerMove();
+    if (gameActive && currentPlayer === "O") {
+        if (gameMode === "vsComputer") {
+            scheduleComputerMove(computerMoveRandom);
+        }
+
+        if (gameMode === "vsComputerImpossible") {
+            scheduleComputerMove(computerMoveImpossible);
+        }
     }
 }
 
 twoPlayersButton.addEventListener("click", () => setGameMode("twoPlayers"));
 vsComputerButton.addEventListener("click", () => setGameMode("vsComputer"));
+vsComputerImpossibleButton.addEventListener("click", () => setGameMode("vsComputerImpossible"));
 // Attach the click handler to each box
 cells.forEach(cell => cell.addEventListener("click", handleCellClick));
 restartButton.addEventListener("click", resetGame);
