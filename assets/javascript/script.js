@@ -1,13 +1,19 @@
-// Represent the table as an array with 9 positions (index 0-8)
-// null = empty case, "X" or "O" = case ocupied
+// Represent the board as an array with 9 positions (index 0-8)
+// null = empty cell, "X" or "O" = occupied cell
 let board = [null, null, null, null, null, null, null, null, null];
-// Who play now - begins always with X
+// Who plays now - always begins with X
 let currentPlayer = "X";
 // The game is active as long as it is not over (win/draw)
 let gameActive  = true;
-// We take all the HTML boxes to add functionality to them
+// Game mode: human-vs-human or human-vs-computer
+let gameMode = "twoPlayers";
+let computerMoveTimeout = null;
+// Get all the HTML boxes to add functionality to them
 const cells = document.querySelectorAll(".cell");
 const statusText = document.getElementById("status");
+const twoPlayersButton = document.getElementById("btn-2players");
+const vsComputerButton = document.getElementById("btn-vs-computer");
+const restartButton = document.getElementById("btn-restart");
 
 // All possible winning combinations (rows, columns, diagonals)
 const winningCombos = [
@@ -21,7 +27,7 @@ const winningCombos = [
     [2, 4, 6]
 ];
 
-// Checks the board for a winner
+// Check the board for a winner
 // Returns the winning combo (array of 3 indexes) or null if no winner yet
 function checkWinner() {
     for (const combo of winningCombos) {
@@ -33,49 +39,135 @@ function checkWinner() {
     return null;
 }
 
-// Checks if the board is full (no null left) - used for draw
+// Check if the board is full (no null left) - used for draw
 function checkDraw() {
     return board.every(cell => cell !== null);
 }
 
-function handleCellClick(event) {
-    const cell = event.target;
-    const index = cell.dataset.index // we read data-index fron HTML
+function getStatusMessage() {
+    if (gameMode === "vsComputer") {
+        return currentPlayer === "X" ? "Rândul tău" : "Rândul calculatorului";
+    }
 
-    // We don't do anything if the game is over or the house is busy
-    if (!gameActive || board[index] !== null) {
+    return `Rândul lui ${currentPlayer}`;
+}
+
+function updateModeButtons() {
+    twoPlayersButton.classList.toggle("active", gameMode === "twoPlayers");
+    vsComputerButton.classList.toggle("active", gameMode === "vsComputer");
+}
+
+function getRandomEmptyCellIndex() {
+    const emptyIndexes = board
+        .map((cell, index) => (cell === null ? index : null))
+        .filter(index => index !== null);
+
+    if (emptyIndexes.length === 0) {
+        return null;
+    }
+
+    const randomPosition = Math.floor(Math.random() * emptyIndexes.length);
+    return emptyIndexes[randomPosition];
+}
+
+function playMove(cell, index) {
+    board[index] = currentPlayer;
+    cell.textContent = currentPlayer;
+    cell.classList.add(currentPlayer.toLowerCase());
+
+    const winCombo = checkWinner();
+
+    if (winCombo) {
+        gameActive = false;
+        statusText.textContent = `${currentPlayer} a câștigat!`;
+        winCombo.forEach(i => cells[i].classList.add("win"));
         return;
     }
-        
-        // We save the move to the status array
-        board[index] = currentPlayer;
 
-        // We display the symbol in the box and add the class for color
-        cell.textContent = currentPlayer;
-        cell.classList.add(currentPlayer.toLowerCase());
+    if (checkDraw()) {
+        gameActive = false;
+        statusText.textContent = "Remiză!";
+        return;
+    }
 
-        // Check if this move created a winner
-        const winCombo = checkWinner();
-
-        if (winCombo) {
-            gameActive = false;
-            statusText.textContent = `${currentPlayer} a câștigat!`;
-            // Highlight the winning cells
-            winCombo.forEach(i => cells[i].classList.add("win"));
-            return;
-        }
-
-        // Check for draw (board full, no winner)
-        if (checkDraw()) {
-            gameActive = false;
-            statusText.textContent = "Remiză!";
-            return;
-        }
-
-        // Switch the current player: if it was "X", make it "O", and vice versa
-        currentPlayer = currentPlayer === "X" ? "O" : "X";
-        // Update the status message to show whose turn it is now
-        statusText.textContent = `Rândul lui ${currentPlayer}`;
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusText.textContent = getStatusMessage();
 }
-// We attach the above function to each box
+
+function computerMove() {
+    computerMoveTimeout = null;
+
+    if (!gameActive || gameMode !== "vsComputer" || currentPlayer !== "O") {
+        return;
+    }
+
+    const index = getRandomEmptyCellIndex();
+
+    if (index === null) {
+        return;
+    }
+
+    const cell = cells[index];
+    playMove(cell, index);
+}
+
+function scheduleComputerMove() {
+    if (computerMoveTimeout !== null) {
+        clearTimeout(computerMoveTimeout);
+    }
+
+    computerMoveTimeout = setTimeout(computerMove, 500);
+}
+
+function resetGame() {
+    if (computerMoveTimeout !== null) {
+        clearTimeout(computerMoveTimeout);
+        computerMoveTimeout = null;
+    }
+
+    board = [null, null, null, null, null, null, null, null, null];
+    currentPlayer = "X";
+    gameActive = true;
+
+    cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove("x", "o", "win");
+    });
+
+    updateModeButtons();
+    statusText.textContent = getStatusMessage();
+}
+
+function setGameMode(mode) {
+    if (computerMoveTimeout !== null) {
+        clearTimeout(computerMoveTimeout);
+        computerMoveTimeout = null;
+    }
+
+    gameMode = mode;
+    resetGame();
+}
+
+function handleCellClick(event) {
+    const cell = event.target;
+    const index = cell.dataset.index; // we read data-index fron HTML
+
+    // Don't do anything if the game is over, the cell is occupied, or it is the computer's turn
+    if (!gameActive || board[index] !== null || (gameMode === "vsComputer" && currentPlayer !== "X")) {
+        return;
+    }
+
+    playMove(cell, index);
+
+    if (gameActive && gameMode === "vsComputer" && currentPlayer === "O") {
+        scheduleComputerMove();
+    }
+}
+
+twoPlayersButton.addEventListener("click", () => setGameMode("twoPlayers"));
+vsComputerButton.addEventListener("click", () => setGameMode("vsComputer"));
+// Attach the click handler to each box
 cells.forEach(cell => cell.addEventListener("click", handleCellClick));
+restartButton.addEventListener("click", resetGame);
+
+resetGame();
