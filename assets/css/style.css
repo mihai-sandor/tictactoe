@@ -1,3 +1,17 @@
-* {
-    
+/* Game table - grid 3 columns and 3 rows */
+#board {
+    display: grid;
+    grid-template-columns: repeat(3,100px);
+    grid-template-rows: repeat(3,100px);
+    gap: 5px;
+    margin: 20px auto;
+}
+/* Every cell in table */
+.cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    border: 2px solid #333;
+    cursor: pointer; /* we show that is click-able */
 }
