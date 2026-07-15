@@ -69,3 +69,14 @@ p {
     background: white;
     cursor: pointer; /* we show that is click-able */
 }
+
+/* Classes for X and O and win combo*/
+.cell.x {
+    color: black;
+}
+.cell.o {
+    color: red;
+}
+.cell.win {
+    background-color: #339a2d;
+}
