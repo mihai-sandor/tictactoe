@@ -59,6 +59,18 @@ p {
     text-align: center;
 }
 
+/* Panel with the "I play as X / O / Random" buttons */
+#symbol-panel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#symbol-panel-label {
+    font-weight: 600;
+    color: #4b5563;
+}
+
 /* Game table - grid 3 columns and 3 rows */
 #board {
     display: grid;
